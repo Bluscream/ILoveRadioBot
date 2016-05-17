@@ -1,0 +1,13 @@
+{
+  "name": "ILoveRadioBot",
+  "version": "0.0.0",
+  "description": "A bot to be used on ILoveRadio.de",
+  "main": "index.js",
+  "author": "Bluscream",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "socket.io-client": "^1.4.6",
+	"chalk": "^1.0"
+  }
+}
