@@ -28,7 +28,7 @@ ECHO ---------------------
 ECHO      ILoveRadio
 ECHO ---------------------
 ECHO.
-node index.js
+node client.js
 GOTO CLIENT_NORMAL
 :CLIENT_BOT
 cls

@@ -1,14 +1,15 @@
 var io = require('socket.io-client');
+var $ = require('jquery');
 var chalk = require('chalk');
-var spam;var ownlogout = false;
-var socket = null;
+var ownlogout = false;var socket = null;var debug = false;
 var ilr = {
 	server: 'http://chat.iloveradio.de:13000',
 	room: '101',
 	name: 'Blu'
 };
-process.on('uncaughtException', function (err) {
-  console.log(chalk.white.bgRed(err));
+var currentName = ilr.name;
+process.on('uncaughtException', function (e) {
+  console.log(chalk.white.bgRed(e+'.'));
 });
 function query(text, callback) {
     'use strict';
@@ -18,9 +19,24 @@ function query(text, callback) {
         callback(data.toString().trim());
     });
 }
-function getRandom(min, max) {
-  return Math.random() * (max - min) + min;
-}
+var waitForMessage = function(){
+	query('', function(response){
+		if(response.startsWith('name ')){
+			logout();login(response.replace('name ', ''));
+		}else if(response.startsWith('eval ')){
+			try{
+				var _result = eval('(' + response.replace('eval ', '') + ')');
+				console.log(_result);
+			}catch(e){console.error(e);}
+		}else if(response.startsWith('log ')){
+			console.log(eval(response.replace('log ', '')));
+		}else{
+			message(response);console.log('\033[2J');
+		}
+		process.stdin.pause();
+		waitForMessage();
+	});
+};
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
@@ -29,27 +45,25 @@ var randomString = function(len){
 	for(var i=0;i<len;i++){text += possible.charAt(Math.floor(Math.random() * possible.length));}
 	return text;
 };
-var waitForMessage = function(text){
-	query(text, function(response){
-		if(response.startsWith('msg ')){
-			message(response.replace('msg ', ''));
-		// }else if(response.startsWith('name ')){
-			// logout();
-			// login(response.replace('name ', ''));
-		// }else if(response.startsWith('eval ')){
-			// eval(response.replace('eval ', ''));
-		}
-		process.stdin.pause();
-		waitForMessage();
+var getPlaying = function(){
+	$.ajax({
+		url: 'http://www.iloveradio.de/xmlparser.php?allchannels=13',
+		success: function(xmlAll) {
+			for (var c = 1; c <= 13; c++) {
+				(function(c) {
+					var xml = $(xmlAll).find('ilr_trackinfo[channel=' + c + ']');
+					var csrc = xml.find('image').attr('src');
+					var a = xml.find('artist').text();
+					var t = xml.find('title').text();
+					console.log(xml+": "+t+" - "+a);
+				});	
+			}
+		},
 	});
-};
-var register = function(name, email, pw){
-	socket.emit('vum_register', {'name': name, 'mail': email, 'password': pw});
-};
+}
 var login = function(name){
-	socket.emit('login', {
-		'name': name
-	});
+	currentName = name;
+	socket.emit('login', { 'name': name });
 };
 var logout = function() {
 	ownlogout = true;
@@ -61,10 +75,8 @@ var room = function(room){
 	});
 };
 var message = function(msg){
-	console.log('Sending message: '+msg);
-	socket.emit('chat message', {
-		'text': msg
-	});
+	if(debug){console.log(chalk.grey('Sending message: '+msg));}
+	socket.emit('chat message', { 'text': msg });
 };
 var connect = function(server, chatroom, name){
 	if(server){ilr.server = server;}
@@ -72,7 +84,7 @@ var connect = function(server, chatroom, name){
 		transports: ['websocket', 'xhr-polling', 'polling', 'htmlfile', 'flashsocket']
 	});
 	console.log(chalk.green('Welcome to the ILoveRadio Shoutbox!'));
-	//console.log(chalk.green('Commands: msg <text>, eval <code>, name <newname>'));
+	console.log(chalk.green('Commands: <message>, eval <code>, name <newname>'));
 	socket.connect();
 	if(chatroom){ilr.room = chatroom;}
 	room(ilr.room);
@@ -80,28 +92,24 @@ var connect = function(server, chatroom, name){
 	login(name);
 };
 var registerEvents = function(){
-	socket.on('chat message', function(msg) {
-		if(msg.verified){
-			console.info(chalk.green(msg.name)+': '+msg.text);
-		}else{
-			console.log(chalk.cyan(msg.name)+': '+msg.text);
-		}
-	});
 	socket.on('login', function(msg) {
 		if (msg.success === 'true') {
 			console.log(chalk.black.bgGreen('Logged in.'));
-			message('hallu c:');
 		} else if (msg.success === 'wrong') {
-			console.log('Der Login hat nicht geklappt! Prüfe bitte Name und Passwort.');
+			console.log(chalk.red('Login wrong.'));
 		} else {
-			console.log('Dein Name scheint schon belegt zu sein... benutze bitte einen anderen!');
+			console.log(chalk.red('Could not log in.'));
 			connect();
 		}
 	});
 	socket.on('logout', function() {
 		console.log(chalk.black.bgYellow('Logged out!'));
 		if(!ownlogout){
-			login(randomString(9));
+			if(ilr.name){
+				login(ilr.name);
+			}else{
+				login(randomString(9));
+			}
 		}else{
 			ownlogout = false;
 		}
@@ -118,19 +126,6 @@ var registerEvents = function(){
 };
 if (null === socket) {
 	connect();registerEvents();
-	// query('Enter Server ('+ilr.server+'): ', function(response){
-		// if(response){ilr.server = response;}
-		// process.stdin.pause();
-		// query('Enter Room Number ('+ilr.room+'): ', function(response){
-			// if(response){ilr.room = response;}
-			// process.stdin.pause();
-			// query('Enter Name ('+ilr.name+'): ', function(response){
-				// if(response){ilr.name = response;}
-				// process.stdin.pause();
-				// connect();registerEvents();
-			// });
-		// });
-	// });
 } else {
 	if (socket.disconnected) {
 		console.log(chalk.white.bgRed('Socket Disconnected: reconnecting...'));
