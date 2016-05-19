@@ -25,14 +25,14 @@
         var sendMessage = function(msg){ ilr3.shoutbox.send(msg);};
         var sayMessage = function(name, msg){ sendMessage(name+': '+msg);};
         var ilr = {
-            name: 'Foltergeist',
-            mentions: ['Blu', 'Bluscream'],
-            bots: ['Jessica'],
-            verified: ['Angi', 'Janine', 'Lost', 'Jessi'],
+            name: 'Bluscream',
+            mentions: ['blu',],
+            bots: [],
+            verified: ['Bluscream', 'Angi', 'Janine', 'Lost', 'Jessi', 'w 26 print-t', 'print-t'],
             blocked: [],
             replace: {
-                '(PUNKT)': '.',
-                '(DOT)': '.',
+                '[P..UNKT]': '.',
+                '[D..OT]': '.',
                 '[SCHRÄGSTRICH]': '/',
                 '[SLASH]': '/',
                 '[ÄT]': '@'
@@ -91,7 +91,10 @@
             });
         };
         var lastMessage = "";
-        $('#ctb_chat').click();$('#playstop').click();
+        if($('#ctb_chat').text().contains("Chat starten")){
+        	$('#ctb_chat').click();
+        }
+        $('#playstop').click();
         setTimeout(function(){
             localStorage.removeItem('ilr_uid');
             ilr3.log = function(){};
@@ -114,11 +117,17 @@
                 if($.inArray(msg.name, ilr.bots) != -1){
                     _flags += ' <span class="bot"></span>';
                 }
-                if(_text.contains(ilr.name.toLowerCase())){
-                    _msg += ' style="border-bottom: 1px dotted #000;">';
-                }else{
-                    _msg += '>';
-                }
+				var mentioned = false;var _mentions = ilr.mentions.length;
+				for (var i = 0; i < _mentions; i++) {
+					if(_text.contains(ilr.mentions[i].toLowerCase()) || _text.contains(ilr.name.toLowerCase())){
+						 mentioned = true;
+					}
+				}
+				if(mentioned){
+					_msg += ' style="border-bottom: 1px dotted #000;">';
+				}else{
+                	_msg += '>';
+            	}
                 for(var key in ilr.replace){
                     if (!ilr.replace.hasOwnProperty(key)) continue;
                     text = text.replaceAll(key, ilr.replace[key]);
@@ -159,6 +168,13 @@
 		                		ilr.blocked.remove(msg.name);
 								}
 		                	}
+	                	});
+	                	$('div[uid="'+uid+'"]').find('.name').click(function(){
+	                		var self = $('#ilr_shoutbox .chat textarea');
+	                		var _val = $(self).val();
+	                		var _txt = $('div[uid="'+uid+'"]').find('.name').text();
+							$(self).val('@'+_txt+ ', ' + _val).focus();
+							self.selectionStart = self.selectionEnd = self.value.length;
 	                	});
                 	}
                 }
