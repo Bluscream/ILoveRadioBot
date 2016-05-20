@@ -21,6 +21,12 @@
           'height: 19px;}'+
           '.own{text-decoration: underline;}'+
           '.channelprev{display:none};'+
+          //'.verified{filter:invert(100%)!important;'+
+          //'-ms-filter:invert(100%)!important;'+
+          //'-webkit-filter:invert(100%)!important;'+
+          //'-moz-filter:invert(100%)!important;'+
+          //'-o-filter:invert(100%)!important;}'+
+          //'@supports (-ms-accelerator:true) {.verified{-ms-filter: invert(1);}}'+
           '</style>').appendTo("head");
         var sendMessage = function(msg){ ilr3.shoutbox.send(msg);};
         var sayMessage = function(name, msg){ sendMessage(name+': '+msg);};
@@ -28,11 +34,11 @@
             name: 'Bluscream',
             mentions: ['blu',],
             bots: [],
-            verified: ['Bluscream', 'Angi', 'Janine', 'Lost', 'Jessi', 'w 26 print-t', 'print-t'],
+            verified: ['Bluscream', 'Blu', 'Angi', 'Janine', 'Lost', 'Jessi.', 'print-t'],
             blocked: [],
             replace: {
-                '[P..UNKT]': '.',
-                '[D..OT]': '.',
+                '(PUNKT)': '.',
+                '(DOT)': '.',
                 '[SCHRÄGSTRICH]': '/',
                 '[SLASH]': '/',
                 '[ÄT]': '@'
@@ -94,7 +100,7 @@
         if($('#ctb_chat').text().contains("Chat starten")){
         	$('#ctb_chat').click();
         }
-        $('#playstop').click();
+        $('#playstop').click();ilr3.radio.setVol(0.25);
         setTimeout(function(){
             localStorage.removeItem('ilr_uid');
             ilr3.log = function(){};
@@ -112,7 +118,11 @@
                     _flags += '<span class="name">'+msg.name;
                 }
                 if (((typeof msg.verified !== 'undefined') && (msg.verified === true)) || ($.inArray(msg.name, ilr.verified) != -1)) {
-                    _flags += ' <span class="verified"></span>';
+					if(navigator.userAgent.contains('Edge')){
+                  	 	_flags += ' <img style="-ms-filter:invert(100%);" width="18" height="17" src="//www.iloveradio.de/fileadmin/templates/img/verified.png" />';
+					}else{					
+                  	 	_flags += ' <span class="verified"></span>';
+                   }
                 }
                 if($.inArray(msg.name, ilr.bots) != -1){
                     _flags += ' <span class="bot"></span>';
@@ -202,7 +212,7 @@
             $('head').append($('<style />').html(styles));
             var allowNormal=function(){ return true; };
             $('*[onselectstart], *[ondragstart], *[oncontextmenu], #songLyricsDiv').unbind('contextmenu').unbind('selectstart').unbind('dragstart').unbind('mousedown').unbind('mouseup').unbind('click').attr('onselectstart',allowNormal).attr('oncontextmenu',allowNormal).attr('ondragstart',allowNormal);
-            $('input.msg').replaceWith($('<textarea type="text" class="msg" lines="5" maxlength="140" placeholder="Deine Message" style="height:400px"></textarea>'));
+            $('input.msg').replaceWith($('<textarea type="text" class="msg" lines="5" maxlength="140" placeholder="Deine Message" style="height:410px;width:100%;"></textarea>'));
             var _t = false;
             $('.message').each( function(i,e){
                 if(e.text() == ilr.welcome)
