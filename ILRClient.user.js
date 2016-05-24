@@ -20,7 +20,7 @@
           'width: 19px;'+
           'height: 19px;}'+
           '.own{text-decoration: underline;}'+
-          '.channelprev{display:none};'+
+          '#channelpreview{display:none};'+
           //'.verified{filter:invert(100%)!important;'+
           //'-ms-filter:invert(100%)!important;'+
           //'-webkit-filter:invert(100%)!important;'+
@@ -29,22 +29,33 @@
           //'@supports (-ms-accelerator:true) {.verified{-ms-filter: invert(1);}}'+
           '</style>').appendTo("head");
         var sendMessage = function(msg){ ilr3.shoutbox.send(msg);};
-        var sayMessage = function(name, msg){ sendMessage(name+': '+msg);};
+        var sayMessage = function(name, msg){ sendMessage('@'+name+', '+msg);};
         var ilr = {
+        	prefix: '@',
             name: 'Bluscream',
-            mentions: ['blu',],
+            mentions: ['blu'],
             bots: [],
-            verified: ['Bluscream', 'Blu', 'Angi', 'Janine', 'Lost', 'Jessi.', 'print-t'],
-            blocked: [],
+			owner: ['Bluscream', 'Blu'],
+            verified: ['Angi', 'Janine', 'Lost', 'Jessi.', 'print-t', 'Basti A,'],
+            blocked: ['Jessi', 'echtjetzt.', 'NoGamer01', 'Laya', 'Lost'],
             replace: {
-                '(PUNKT)': '.',
-                '(DOT)': '.',
+                '[P..UNKT]': '.',
+                '[D..OT]': '.',
                 '[SCHRÄGSTRICH]': '/',
                 '[SLASH]': '/',
                 '[ÄT]': '@'
             },
+            commands: {
+				time: { command: 'time',
+					action: 'sendMessage(new Date());'},
+				hi: { command: 'hallo',
+					action: 'sayMessage(msg.name,"hallu c;");'},
+				playing: { command: 'sender',
+					action: 'sayMessage(msg.name,$(".channel-headline.big").text());'},
+			},
         };
-        ilr.welcome = 'logged in.';
+        ilr.welcome = 'hat sich eingeloggt.';
+        ilr.prefix = ilr.prefix+ilr.name+' ';
         //	'String'.capitalizeFirstLetter();
         String.prototype.capitalizeFirstLetter = function() {
             return this.charAt(0).toUpperCase() + this.slice(1);
@@ -101,17 +112,24 @@
         	$('#ctb_chat').click();
         }
         $('#playstop').click();ilr3.radio.setVol(0.25);
-        setTimeout(function(){
+        //setTimeout(function(){
+        $(document).ready(function() {
             localStorage.removeItem('ilr_uid');
             ilr3.log = function(){};
             var uid = 0;
+			$('.login').find('input[type="text"]').change(function() {
+				ilr.name = $('.login').find('input[type="text"]').val();
+			});	
             ilr3.shoutbox.get = function(msg) {
             	uid++;
-                msg.name = decodeURI(msg.name);
-                msg.text = decodeURI(msg.text);
+                msg.name = $("<div/>").html(msg.name).text();
+                msg.text = $("<div/>").html(msg.text).text();
                 var text = msg.text;
                 var _text = text.toLowerCase();
-                var _flags = '<div uid="'+uid+'">';var _msg = '<span class="message"';
+                var _flags = '<div uid="'+uid+'">';var _msg = '<span title="'+new Date()+'" class="message"';
+                if($.inArray(msg.name, ilr.owner) != -1){
+                    _flags += '<span class="name">😶</span>';
+                }
                 if(msg.name == ilr.name){
                     _flags += '<span class="name own">'+msg.name;
                 }else{
@@ -201,10 +219,35 @@
                         $('#ilr_shoutbox .chat .textarea').scrollTop($('#ilr_shoutbox .chat .textarea')[0].scrollHeight);
                     }
                 }
-                var _users = ilr.users;
+                //var _users = ilr.users;
+				if(_text.startsWith(ilr.prefix.toLowerCase())){
+					if($.inArray(msg.name, ilr.blocked) != -1){return;}
+					if(msg.name.toLowerCase().contains(ilr.name.toLowerCase())){return;}
+					var _txt = _text.split(ilr.prefix.toLowerCase())[1];
+					var args = _txt.split(' ') || '';
+					var cmd = args.shift().toLowerCase();
+					for (var key in ilr.commands) {
+						if (!ilr.commands.hasOwnProperty(key)) continue;
+						var command = ilr.commands[key].command.toLowerCase();
+						var action = ilr.commands[key].action;
+						if(cmd == command){
+							console.info('Command \''+cmd+'\' with arguments \''+args+'\' was issued by '+msg.name+'.');
+							try{
+								if(msg.name == ilr.name){
+									setTimeout(function(){eval(action);}, 1000);break;
+								}else{
+									eval(action);break;
+								}
+							}catch(err){
+								sayMessage(msg.name, '\''+command+'\' '+err);
+								console.error('Bot is unable to process command '+command+'\n\n.Error Message: '+err+'\n\nAction:\n\n'+action);break;
+							}
+						}
+					}
+				}
             };
             $('.login').find('input[type="text"]').val(ilr.name);
-            $('.usr_submit').click();
+            //$('.usr_submit').click();
             $('.flex-outer-allsize.fixed-outer-single-height,#login').css('height', '500px');
             $('#ilr_shoutbox .chat .hidden-scrollbar,#ilr_shoutbox .textarea').css('height', '100%');
             $('#ilr_shoutbox .textarea').css('width', '101%');
@@ -215,7 +258,7 @@
             $('input.msg').replaceWith($('<textarea type="text" class="msg" lines="5" maxlength="140" placeholder="Deine Message" style="height:410px;width:100%;"></textarea>'));
             var _t = false;
             $('.message').each( function(i,e){
-                if(e.text() == ilr.welcome)
+                if($(e).text() == ilr.welcome)
                     var _t = true;return;
             });
             //if(!_t){ilr3.shoutbox.send(ilr.welcome);}
@@ -231,5 +274,6 @@
                     //$('#ilr_shoutbox .chat .msg').val('');
                 }
             });
-        },3000);
+        });
+        //},15000);
 })();
